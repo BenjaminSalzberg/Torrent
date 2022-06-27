@@ -1,0 +1,6 @@
+
+*.json
+*.exe
+*.dll
+/bin
+/obj
