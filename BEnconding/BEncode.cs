@@ -14,6 +14,18 @@ namespace Torrent
             buffer.Flush();
             
         }
+        public static byte[] Encode(object obj)
+        // given an object
+        // convert it into a byte array 
+        {
+            MemoryStream buffer = new MemoryStream();
+            EncodeRecursion(buffer, obj);
+            // write file
+            byte[] bytearr = buffer.ToArray();
+            buffer.Flush();
+            return bytearr;
+            
+        }
 
         private static void EncodeRecursion(MemoryStream buffer, object obj)
         {

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 namespace Torrent
 {
     public class Torrent
@@ -16,6 +17,8 @@ namespace Torrent
         public TorrentEncoding torrentEncoding {get; private set;}
         // the 
         public InfoDictionary infodictionary {get; private set;}
+
+        public byte[] info_hash {get; private set;}
 
         // Torrent Constructor
         public Torrent(Dictionary<String, Object> dict, String name)
@@ -44,7 +47,8 @@ namespace Torrent
                 TrackerList.Add(new Tracker(announce));
             }
             
-            
+            //BEncode.Encode(dict["info"]);
+            this.info_hash = getInfoHash(BEncode.Encode(dict["info"]));
             this.torrentEncoding = new TorrentEncoding(System.Text.Encoding.UTF8.GetString((byte[])dict["encoding"]));
 
             Dictionary<String, Object> infodict = (Dictionary<String, Object>)dict["info"];
@@ -55,6 +59,18 @@ namespace Torrent
             //Console.WriteLine(URLLst.Count);
             //Console.WriteLine(System.Text.Encoding.UTF8.GetString((byte[])URLLst[0]));
         }
+        private byte[] getInfoHash(byte[] infodict)
+        {
+            byte[] hashBytes;
+            using(SHA1 sha1 = SHA1.Create())
+            {
+                hashBytes = sha1.ComputeHash(infodict);
+                //string hash = BitConverter.ToString(hashBytes).Replace("-",String.Empty);
+                //Console.WriteLine("The SHA1 hash is: " + hash);
+            } 
+            return hashBytes;
+        }
+
         public List<Tracker> sortedTrackerLst()
         {
             List<Tracker> retLst = new List<Tracker>(TrackerList);
