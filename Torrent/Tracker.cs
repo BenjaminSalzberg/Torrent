@@ -1,5 +1,15 @@
+using System.Net.Sockets;
+using System.Net;
+
 namespace Torrent
 {
+    public enum TrackerStatus
+    {
+        Inactive, 
+        Active, 
+        Uncontacted, 
+        Contacted
+    }
     public class Tracker
     {
         // Name of the tracker 
@@ -9,7 +19,12 @@ namespace Torrent
 
         //used primarily for announce list, prefer lower priority, defaults to 0 for announce
         public int priority {get; set; }
-
+        public byte[]? trackerResponse {get; set; }
+        public TrackerStatus status {get; set;} = TrackerStatus.Uncontacted; 
+        public Protocols protocol {get; set; }
+        public UdpClient? udpSocket {get; set; }
+        //public wssSocket wssSocket {get; set; }
+        //public HTMLSocket htmlSocket {get; set; }
 
         public Tracker(String name, int priority = 0)
         {

@@ -12,7 +12,7 @@ namespace Torrent
             String name = "tears-of-steel.torrent";
             Dictionary<String, Object> obj = (Dictionary<String, Object>)BDecode.Decode(path);
             Torrent torrentDictionary = BencodeToTorrent(obj, name);
-            String announce = System.Text.Encoding.UTF8.GetString((byte[])obj["announce"]);
+            //String announce = System.Text.Encoding.UTF8.GetString((byte[])obj["announce"]);
             //print(String.Join("\n", obj.Keys.ToArray()));
 
             //print(String.Join("\n", ((Dictionary<String, Object>)obj["info"]).Keys.ToArray()));
@@ -26,7 +26,30 @@ namespace Torrent
             //SocketRunner sockets = new SocketRunner();
             //print(torrentDictionary.info_hash);
             TrackerCommunication communication = new TrackerCommunication();
-            communication.SendTrackerCommunication(announce, torrentDictionary.info_hash);
+            foreach (Tracker tracker in torrentDictionary.TrackerList)
+            {
+                string announce = tracker.Name;
+                Console.WriteLine("Starting tracker " + announce);
+                try
+                {
+                    communication.SendTrackerCommunication(tracker, torrentDictionary.info_hash);
+                }
+                catch(Exception e) when (e.Message == "This protocol has not been implemented")
+                {
+                    Console.WriteLine(e);
+                    continue;
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                if(tracker.trackerResponse != null)
+                {
+                    Console.WriteLine(tracker.trackerResponse.Count());
+                    Console.WriteLine(tracker.trackerResponse);
+                    break;
+                }
+            }
             //communication.sendWebRequest(announce);
         }
 

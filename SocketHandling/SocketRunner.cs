@@ -7,7 +7,7 @@ namespace Torrent
 
     public class SocketRunner
     {
-        public async void sendUDPRequest()
+        public void sendUDPRequest()
         {
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             
