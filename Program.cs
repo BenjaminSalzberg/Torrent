@@ -45,7 +45,6 @@ namespace Torrent
                 }
                 if(tracker.trackerResponse != null)
                 {
-                    Console.WriteLine(tracker.trackerResponse.Count());
                     Console.WriteLine(tracker.trackerResponse);
                     break;
                 }

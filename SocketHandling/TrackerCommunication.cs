@@ -94,6 +94,9 @@ namespace Torrent
                     tracker.protocol = Protocols.UDP;
                     tracker.udpSocket = udpTrackerSocket;
                     tracker.trackerResponse = receiveBytes;
+                    tracker.transaction_id = transaction_id;
+                    // A connection id, this is used when further information is exchanged with the tracker, to identify you. This connection id can be reused for multiple requests, but if it's cached for too long, it will not be valid anymore.
+                    tracker.connection_id = connection_id;
                     tracker.status = TrackerStatus.Active;
                     break;
                     //return tracker;
