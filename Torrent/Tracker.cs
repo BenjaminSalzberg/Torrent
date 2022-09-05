@@ -23,8 +23,10 @@ namespace Torrent
         public TrackerStatus status {get; set;} = TrackerStatus.Uncontacted; 
         public Protocols protocol {get; set; }
         public UdpClient? udpSocket {get; set; }
-        public long? connection_id {get; set;}
-        public int? transaction_id {get; set;}
+        //public long? connection_id {get; set;}
+        public byte[]? connection_id {get; set;}
+        // public int? transaction_id {get; set;}
+        public byte[]? transaction_id {get; set;}
         //public wssSocket wssSocket {get; set; }
         //public HTMLSocket htmlSocket {get; set; }
 

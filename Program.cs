@@ -45,9 +45,18 @@ namespace Torrent
                 }
                 if(tracker.trackerResponse != null)
                 {
-                    Console.WriteLine(tracker.trackerResponse);
+                    //Console.WriteLine(BitConverter.ToString(tracker.trackerResponse));
                     break;
                 }
+            }
+            var activeTrackers = torrentDictionary.TrackerList.Where(x=> x.status == TrackerStatus.Active);
+            foreach (var item in activeTrackers)
+            {
+                Console.WriteLine(item.Name);
+                if(item.transaction_id != null)
+                    Console.WriteLine(BitConverter.ToString(item.transaction_id));
+                if(item.connection_id != null)
+                    Console.WriteLine(BitConverter.ToString(item.connection_id));
             }
             //communication.sendWebRequest(announce);
         }

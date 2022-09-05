@@ -76,11 +76,16 @@ namespace Torrent
             byte[] connection_id_byte = BitConverter.GetBytes(connection_id);
             byte[] action_byte = BitConverter.GetBytes(action);
             byte[] transaction_id_byte = BitConverter.GetBytes(transaction_id);
+            // set up the transaction_id 
+            if(tracker.transaction_id== null)
+                tracker.transaction_id = new byte[transaction_id_byte.Count()];
+            Array.Copy(transaction_id_byte,tracker.transaction_id,transaction_id_byte.Count());
             byte[] payload = new byte[connection_id_byte.Length + action_byte.Length + transaction_id_byte.Length];
             // Set proper Endian-ness. 
             Array.Reverse(connection_id_byte);
             Array.Reverse(action_byte);
             Array.Reverse(transaction_id_byte);
+            // Copy the data into the sending packet
             Buffer.BlockCopy(connection_id_byte, 0, payload, 0, connection_id_byte.Length);
             Buffer.BlockCopy(action_byte, 0, payload, connection_id_byte.Length, action_byte.Length);
             Buffer.BlockCopy(transaction_id_byte, 0, payload, connection_id_byte.Length+action_byte.Length, transaction_id_byte.Length);
@@ -91,21 +96,18 @@ namespace Torrent
                 // try for a succes, it will fail at the .Receive function
                 // if it succeeds, then we know that it has ben set to active. 
                 try{
-                    Console.WriteLine("Sending packet");
+                    // send the data
                     udpTrackerSocket.Send(payload, connection_id_byte.Length + action_byte.Length + transaction_id_byte.Length, host, port);
+                    // set up the receive data endpoint
                     IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 6969);
+                    // Receive the data
                     Byte[] receiveBytes = udpTrackerSocket.Receive(ref RemoteIpEndPoint);
-                    string returnData = System.Text.Encoding.ASCII.GetString(receiveBytes);
-                    Console.WriteLine("This is the message you received " + returnData.ToString());
+                    // preserve the tracker data, including the protocol, the socket, the received value, and the status of the tracker. 
                     tracker.protocol = Protocols.UDP;
                     tracker.udpSocket = udpTrackerSocket;
                     tracker.trackerResponse = receiveBytes;
-                    tracker.transaction_id = transaction_id;
-                    // A connection id, this is used when further information is exchanged with the tracker, to identify you. This connection id can be reused for multiple requests, but if it's cached for too long, it will not be valid anymore.
-                    tracker.connection_id = connection_id;
                     tracker.status = TrackerStatus.Active;
                     break;
-                    //return tracker;
                 }
                 catch (SocketException e) when (e.ErrorCode.Equals(10060))
                 {
@@ -113,7 +115,7 @@ namespace Torrent
                 }
                 catch (Exception e ) {
                     Console.WriteLine(e.ToString());
-                    throw e;
+                    //throw e;
                 }
             }
             if(tracker.status != TrackerStatus.Active)
@@ -126,6 +128,35 @@ namespace Torrent
             else
             {
                 Console.WriteLine("Tracker connect success");
+                // Server response can be broken up into: 
+                // int32_t  action          Describes the type of packet, in this case it should be 0, for connect. 3 for error
+                // int32_t  transaction_id  Must match the transaction_id sent from the client.
+                // int64_t	connection_id	A connection id, this is used when further information is exchanged with the tracker, to identify you. This connection id can be reused for multiple requests, but if it's cached for too long, it will not be valid anymore.
+                var ResponseAction = tracker.trackerResponse.AsSpan(0, 4).ToArray();
+                var ResponseTransactionId = tracker.trackerResponse.AsSpan(4, 4).ToArray();
+                var ResponseConnectionId = tracker.trackerResponse.AsSpan(8, 8).ToArray();
+                // get local endienness  not network endienness
+                Array.Reverse(ResponseAction);
+                Array.Reverse(ResponseTransactionId);
+                Array.Reverse(ResponseConnectionId);
+                // ensure that the action is the correct action
+                string ResponseActionString = BitConverter.ToString(ResponseAction).Replace("-", string.Empty);
+                int ResponseActionValue = int.Parse(ResponseActionString, System.Globalization.NumberStyles.HexNumber);
+                if(ResponseActionValue != 0)
+                {
+                    throw new ActionErrorException(string.Format("The action value was not 0, and was {0}", ResponseActionString));
+                }
+                // ensure that the transaction ids match
+                if(tracker.transaction_id.SequenceEqual(ResponseTransactionId))
+                {
+                    //Console.WriteLine("Transaction Id's match");
+                }
+                else
+                {
+                    throw new TransactionIdMismatchException(String.Format("The transaction id of the server is {0}, and the transaction of the client is {}", BitConverter.ToString(ResponseTransactionId), BitConverter.ToString(transaction_id_byte)) );
+                }
+                // We now set the tracker's connection id to the response from the server. We no longer need to identify the 
+                tracker.connection_id = ResponseConnectionId;
             }            
         }
 
@@ -136,6 +167,26 @@ namespace Torrent
             public NoResponseFromTrackerException(string message) : base(message)
             {}
             public NoResponseFromTrackerException(string message, Exception inner) : base(message, inner)
+            {}
+        }
+
+        public class TransactionIdMismatchException : Exception
+        {
+            public TransactionIdMismatchException()
+            {}
+            public TransactionIdMismatchException(string message) : base(message)
+            {}
+            public TransactionIdMismatchException(string message, Exception inner) : base(message, inner)
+            {}
+        }
+
+        public class ActionErrorException : Exception
+        {
+            public ActionErrorException()
+            {}
+            public ActionErrorException(string message) : base(message)
+            {}
+            public ActionErrorException(string message, Exception inner) : base(message, inner)
             {}
         }
 
