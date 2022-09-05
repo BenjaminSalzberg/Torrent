@@ -36,7 +36,7 @@ namespace Torrent
                         }
                         catch (NoResponseFromTrackerException)
                         {
-                            //Console.WriteLine("No response from " + tracker.Name);
+                            Console.WriteLine("No response from " + tracker.Name);
                         }
                         catch (Exception e)
                         {
@@ -65,7 +65,9 @@ namespace Torrent
         {
             // try 4 times once every 15 seconds, then stop retrying
             UdpClient udpTrackerSocket = new UdpClient(51126);
-            udpTrackerSocket.Client.ReceiveTimeout = 1000;
+            // set timeout to 15 seconds
+            int TimeoutSeconds = 1;
+            udpTrackerSocket.Client.ReceiveTimeout = (TimeoutSeconds * 1000);
             long connection_id = 0x41727101980;
             int action = 0;
             Random random = new Random();
@@ -75,15 +77,19 @@ namespace Torrent
             byte[] action_byte = BitConverter.GetBytes(action);
             byte[] transaction_id_byte = BitConverter.GetBytes(transaction_id);
             byte[] payload = new byte[connection_id_byte.Length + action_byte.Length + transaction_id_byte.Length];
+            // Set proper Endian-ness. 
             Array.Reverse(connection_id_byte);
             Array.Reverse(action_byte);
             Array.Reverse(transaction_id_byte);
             Buffer.BlockCopy(connection_id_byte, 0, payload, 0, connection_id_byte.Length);
             Buffer.BlockCopy(action_byte, 0, payload, connection_id_byte.Length, action_byte.Length);
             Buffer.BlockCopy(transaction_id_byte, 0, payload, connection_id_byte.Length+action_byte.Length, transaction_id_byte.Length);
+            // The number of retries for each test. 
             int maxRetries = 4;
             for(int i=0; i < maxRetries; i++)
             {
+                // try for a succes, it will fail at the .Receive function
+                // if it succeeds, then we know that it has ben set to active. 
                 try{
                     Console.WriteLine("Sending packet");
                     udpTrackerSocket.Send(payload, connection_id_byte.Length + action_byte.Length + transaction_id_byte.Length, host, port);
@@ -107,14 +113,20 @@ namespace Torrent
                 }
                 catch (Exception e ) {
                     Console.WriteLine(e.ToString());
-                    //throw e;
+                    throw e;
                 }
             }
-            //Console.WriteLine("Went through all attempts");
-            tracker.status = TrackerStatus.Inactive;
-            udpTrackerSocket.Close();
-            udpTrackerSocket.Dispose();
-            throw new NoResponseFromTrackerException();
+            if(tracker.status != TrackerStatus.Active)
+            {
+                tracker.status = TrackerStatus.Inactive;
+                udpTrackerSocket.Close();
+                udpTrackerSocket.Dispose();
+                throw new NoResponseFromTrackerException();
+            }
+            else
+            {
+                Console.WriteLine("Tracker connect success");
+            }            
         }
 
         public class NoResponseFromTrackerException : Exception
