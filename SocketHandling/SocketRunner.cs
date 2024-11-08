@@ -2,18 +2,17 @@ using System.Net.Sockets;
 using System.Net;
 
 
-namespace Torrent
+namespace TorrentController.SocketHandling
 {
+	public class SocketRunner
+	{
+		public static void SendUDPRequest()
+		{
+			Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-    public class SocketRunner
-    {
-        public void sendUDPRequest()
-        {
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            
 
-        }
-    }
+		}
+	}
 
-    
+
 }

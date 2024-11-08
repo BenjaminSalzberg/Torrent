@@ -1,74 +1,75 @@
-﻿using System;
-using System.Net;
+﻿using TorrentController.BEncoding;
+using TorrentController.SocketHandling;
+using TorrentController.TorrentData;
 
-namespace Torrent
+namespace TorrentController
 {
-    class Program
-    {
-        public static readonly HttpClient client = new HttpClient();
-        public static void Main(string[] args)
-        {
-            String path = "D:\\Users\\Benjamin\\Downloads\\tears-of-steel.torrent";
-            String name = "tears-of-steel.torrent";
-            Dictionary<String, Object> obj = (Dictionary<String, Object>)BDecode.Decode(path);
-            Torrent torrentDictionary = BencodeToTorrent(obj, name);
-            //String announce = System.Text.Encoding.UTF8.GetString((byte[])obj["announce"]);
-            //print(String.Join("\n", obj.Keys.ToArray()));
+	class Program
+	{
+		public static readonly HttpClient client = new();
+		public static void Main(string[] args)
+		{
+			string path = "D:\\Users\\Benjamin\\Downloads\\tears-of-steel.torrent";
+			string name = "tears-of-steel.torrent";
+			Dictionary<string, object> obj = (Dictionary<string, object>)BDecode.Decode(path);
+			Torrent torrentDictionary = BencodeToTorrent(obj, name);
+			//String announce = System.Text.Encoding.UTF8.GetString((byte[])obj["announce"]);
+			//print(String.Join("\n", obj.Keys.ToArray()));
 
-            //print(String.Join("\n", ((Dictionary<String, Object>)obj["info"]).Keys.ToArray()));
-            //print(announce);
-            //List<Tracker> trackLst = torrentDictionary.sortedTrackerLst();
-            //foreach (var item in trackLst)
-            //{
-            //    print(item.Name);
-            //    print(item.priority);
-            //}
-            //SocketRunner sockets = new SocketRunner();
-            //print(torrentDictionary.info_hash);
-            TrackerCommunication communication = new TrackerCommunication();
-            foreach (Tracker tracker in torrentDictionary.TrackerList)
-            {
-                string announce = tracker.Name;
-                Console.WriteLine("Starting tracker " + announce);
-                try
-                {
-                    communication.SendTrackerCommunication(tracker, torrentDictionary.info_hash);
-                }
-                catch(Exception e) when (e.Message == "This protocol has not been implemented")
-                {
-                    Console.WriteLine(e);
-                    continue;
-                }
-                catch(Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-                if(tracker.trackerResponse != null)
-                {
-                    //Console.WriteLine(BitConverter.ToString(tracker.trackerResponse));
-                    break;
-                }
-            }
-            var activeTrackers = torrentDictionary.TrackerList.Where(x=> x.status == TrackerStatus.Active);
-            foreach (var item in activeTrackers)
-            {
-                Console.WriteLine(item.Name);
-                if(item.transaction_id != null)
-                    Console.WriteLine(BitConverter.ToString(item.transaction_id));
-                if(item.connection_id != null)
-                    Console.WriteLine(BitConverter.ToString(item.connection_id));
-            }
-            //communication.sendWebRequest(announce);
-        }
+			//print(String.Join("\n", ((Dictionary<String, Object>)obj["info"]).Keys.ToArray()));
+			//print(announce);
+			//List<Tracker> trackLst = torrentDictionary.sortedTrackerLst();
+			//foreach (var item in trackLst)
+			//{
+			//    print(item.Name);
+			//    print(item.priority);
+			//}
+			//SocketRunner sockets = new SocketRunner();
+			//print(torrentDictionary.info_hash);
+			TrackerCommunication communication = new();
+			foreach (Tracker tracker in torrentDictionary.TrackerList)
+			{
+				string announce = tracker.Name;
+				Print("Starting tracker " + announce);
+				try
+				{
+					communication.SendTrackerCommunication(tracker, torrentDictionary.InfoHash);
+				}
+				catch (Exception e) when (e.Message == "This protocol has not been implemented")
+				{
+					Print(e);
+					continue;
+				}
+				catch (Exception e)
+				{
+					Print(e);
+				}
+				if (tracker.TrackerResponse != null)
+				{
+					//Console.WriteLine(BitConverter.ToString(tracker.trackerResponse));
+					break;
+				}
+			}
+			var activeTrackers = torrentDictionary.TrackerList.Where(x => x.Status == TrackerStatus.Active);
+			foreach (var item in activeTrackers)
+			{
+				Print(item.Name);
+				if (item.TransactionId != null)
+					Print(BitConverter.ToString(item.TransactionId));
+				if (item.ConnectionId != null)
+					Print(BitConverter.ToString(item.ConnectionId));
+			}
+			//communication.sendWebRequest(announce);
+		}
 
-        private static Torrent BencodeToTorrent(Dictionary<String, Object> dict, String name)
-        {
-            Torrent torrent = new Torrent(dict, name);
-            return torrent;
-        }
-        public static void print(object str)
-        {
-            Console.WriteLine(str);
-        }
-    }
+		private static Torrent BencodeToTorrent(Dictionary<string, object> dict, string name)
+		{
+			Torrent torrent = new(dict, name);
+			return torrent;
+		}
+		public static void Print(object str)
+		{
+			Console.WriteLine(str);
+		}
+	}
 }

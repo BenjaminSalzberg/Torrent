@@ -1,0 +1,10 @@
+[*.{cs,vb}]
+
+# IDE0301: Simplify collection initialization
+dotnet_style_prefer_collection_expression = never
+
+# IDE0003: Remove qualification
+dotnet_style_qualification_for_property = true
+
+# IDE0003: Remove qualification
+dotnet_style_qualification_for_field = true
